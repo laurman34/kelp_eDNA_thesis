@@ -1,0 +1,877 @@
+---
+title: "Kelp depth project"
+output: html_notebook
+---
+#installing packages
+```{r}
+if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager") #need
+BiocManager::install("decontam")
+install.packages("devtools") #Installs devtools (if not already installed)
+devtools::install_github("donaldtmcknight/microDecon",force=TRUE) #Installs microDecon
+source("https://raw.githubusercontent.com/joey711/phyloseq/master/inst/scripts/installer.R",
+       local = TRUE)
+install_phyloseq(branch = "devel")
+install.packages("ggplot2")
+install.packages("vegan")
+install.packages("BiocManager")
+BiocManager::install("DESeq2")
+install.packages("plotly")
+install.packages("optparse")
+install.packages("ggrepel")
+install.packages("cluster")
+install.packages("biomformat")
+install.packages("gridBase")
+library(devtools)
+devtools::install_github("gauravsk/ranacapa")
+install.packages("tidyr")
+install.packages("emmeans")
+install.packages("janitor")
+install.packages("broom")
+install.packages("treemapify")
+install.packages("RColorBrewer")
+```
+#loading libraries
+```{r}
+library(dplyr)
+library(tibble)
+library(reshape2) #not used
+library(phyloseq)
+library(ggplot2)
+library(vegan)
+library(plotly) #not used
+library(optparse) #not used
+library(ggrepel)
+library(cluster)
+library(biomformat)
+library('gridBase') #didn't use i think
+library(ranacapa)
+library(decontam)
+library(tidyr)
+library(emmeans)
+library(janitor)
+library(treemapify)
+library(RColorBrewer)
+```
+#creating 12S post-decontam paths
+```{r}
+#setting working directory
+setwd("~/Maura's Kelp Project/Kelp R stuff")
+#12S metadata
+metadata_12S <- read.csv("C:/Users/longc/OneDrive/Documents/Maura's Kelp Project/Kelp R stuff/rare_12S_meta.csv")
+metadata_12S %>% 
+  remove_rownames %>% 
+  column_to_rownames(var="Sample_Acronym")-> metadata_12S
+metadata_12S <- metadata_12S %>% mutate_all(na_if,"")
+metadata_12S <- sample_data(metadata_12S)
+
+#12S OTU
+otu_12S <- read.csv("C:/Users/longc/OneDrive/Documents/Maura's Kelp Project/Kelp R stuff/rare_12S_otu.csv")
+
+#converts first column into row names
+otu_12S %>% 
+  remove_rownames %>% 
+  column_to_rownames(var="ESVId")-> otu_12S
+
+otu_12S <- as.matrix(otu_12S, ncol=28)
+
+class(otu_12S) <- "numeric"
+
+otu_12S <- otu_table(otu_12S,taxa_are_rows=TRUE) #coercing it into a otu table
+
+#12S tax
+tax_12S <- read.csv("C:/Users/longc/OneDrive/Documents/Maura's Kelp Project/Kelp R stuff/rare_12S_tax.csv")
+tax_12S %>% 
+  remove_rownames %>% 
+  column_to_rownames(var="ESVId")-> tax_12S
+
+tax_12S <- as.matrix(tax_12S)
+tax_12S <- tax_table(tax_12S)
+
+#creating 12S phyloseq object
+physeq_obj <- phyloseq(otu_12S,tax_12S,metadata_12S)
+physeq_obj
+```
+#creating COI post-decontam paths
+```{r}
+metadata_COI <- read.csv("C:/Users/longc/OneDrive/Documents/Maura's Kelp Project/Kelp R stuff/rare_COI_meta.csv")
+#COI metadata
+metadata_COI %>% 
+  remove_rownames %>% 
+  column_to_rownames(var="Sample_Acronym")-> metadata_COI
+metadata_COI <- sample_data(metadata_COI)
+view(metadata_COI)
+#COI OTU
+otu_COI <- read.csv("C:/Users/longc/OneDrive/Documents/Maura's Kelp Project/Kelp R stuff/rare_COI_OTU.csv")
+#converts first column into row names
+otu_COI %>% 
+  remove_rownames %>% 
+  column_to_rownames(var="ESVId")-> otu_COI
+
+otu_COI <- as.matrix(otu_COI, ncol=28)
+
+class(otu_COI) <- "numeric"
+
+otu_COI <- otu_table(otu_COI,taxa_are_rows=TRUE) #coercing it into a otu table
+
+#COI tax
+tax_COI <- read.csv("C:/Users/longc/OneDrive/Documents/Maura's Kelp Project/Kelp R stuff/rare_COI_tax.csv")
+tax_COI %>% 
+  remove_rownames %>% 
+  column_to_rownames(var="ESVId")-> tax_COI
+tax_COI <- as.matrix(tax_COI)
+tax_COI <- tax_table(tax_COI)
+
+#creating COI phyloseq object
+coi_physeq_obj <- phyloseq(otu_COI,tax_COI,metadata_COI)
+coi_physeq_obj
+
+```
+#phylo to vegan
+```{r}
+#converting 12S phyloseq object into something that can be analyzed by vegan functions
+vegan_12S <- vegan_otu(physeq_obj)
+
+#creating dataframe from metadata
+sampledf <-   data.frame(sample_data(physeq_obj))
+#creating Bray-curtis dissimilarity matrix
+d_12S <- vegdist(vegan_12S, method="bray") 
+
+#converting CO1 phyloseq object into something that can be analyzed by vegan functions
+vegan_coi <- vegan_otu(coi_physeq_obj)
+
+#creating Bray-Curtis dissimilarity matrix
+d_COI <- vegdist(vegan_coi, method="bray") 
+
+#creating dataframe from COI metadata table
+sampledf2 <- data.frame(sample_data(coi_physeq_obj))
+```
+#NMDS PLOTS 12S
+```{r}
+physeq_ord <- ordinate(physeq_obj,"NMDS","bray")
+#creating NMDS plot by depth
+p.depth<- plot_ordination(physeq_obj,physeq_ord,color="Depth_Class")+stat_ellipse(geom="path")+ggtitle("No significant variation by depth for fish (12S) community assemblages ")+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+ theme(plot.title = element_text(size=10))
+p.depth
+ggsave("12S_NMDS_depth.png")
+
+#creating NMDS plot by region
+p.region <- plot_ordination(physeq_obj,physeq_ord,color="Region")+ggtitle("Significant variation by region for fish (12S) community assemblages ")+stat_ellipse()+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+ theme(plot.title = element_text(size=15))
+p.region
+ggsave("12S_NMDS_Region.png")
+```
+#NMDS PLOTS COI
+```{r}
+physeq_ord <- ordinate(coi_physeq_obj,"NMDS","bray")
+
+#creating NMDS plot by depth
+p.depth<- plot_ordination(coi_physeq_obj,physeq_ord,color="Depth_Class")+stat_ellipse(geom="path")+ggtitle("No significant variation by depth for invertebrates & algae (COI) community assemblages ")+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+ theme(plot.title = element_text(size=10))
+p.depth
+ggsave("COI_NMDS_Depth.png")
+
+#creating NMDS plot by region
+p.region <- plot_ordination(coi_physeq_obj,physeq_ord,color="Region")+ggtitle("Significant variation by region for invertebrates & algae (COI) community assemblages ")+stat_ellipse()+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+ theme(plot.title = element_text(size=8))
+p.region
+ggsave("COI_NMDS_Region.png")
+```
+#12SPERMANOVA
+```{R}
+#Model 1
+broom::tidy(adonis(vegan_12S~sampledf$Depth_Class+sampledf$Region+sampledf$Depth_Class*sampledf$Region)$aov.tab)#depth around 0.1, region 0.003, interaction not sig
+
+#Model 1 pairwise comparisons by depth
+pairwise_adonis(vegan_12S,sampledf$Depth_Class,sim_method="bray",p_adjust_m = "fdr") #nothing
+
+#Model 1 pairwise comparisons by region
+pairwise_adonis(vegan_12S,sampledf$Region,sim_method="bray",p_adjust_m="fdr") #catalina is diff from the other 2
+
+#Homogeneity of dispersions test
+broom::tidy(TukeyHSD(betadisper(d_12S,getElement(sampledf,"Region")))) #not sig
+
+#Model 2
+broom::tidy(adonis(vegan_12S~sampledf$dissolved_oxygen+sampledf$nitrate+sampledf$chlorophyll+sampledf$Temp_9_m+sampledf$primary_productivity+sampledf$calcite+sampledf$light)$aov.tab) #chlorophyll = p=0.029
+
+#Final model
+broom::tidy(adonis(vegan_12S~sampledf$Region+sampledf$chlorophyll+sampledf$Region*sampledf$chlorophyll)$aov.tab) #region masks the effect of chlorophyll
+```
+##tree map
+```{r}
+#Model 1 tree map
+m1 <- adonis(vegan_12S~sampledf$Depth_Class+sampledf$Region+sampledf$Depth_Class*sampledf$Region)$aov.tab#depth around 0.1, region 0.003, interaction not sig
+q<-as.data.frame(m1)
+row.names(q)<-c("Depth","Region","Sample","Residuals","Total") # must match names correctly
+q<-data.frame(row.names(q), q)
+names(q)[1]<-"Level"
+q<-q[-which(row.names(q)=="Total"),]
+q$Level<-paste(q$Level, "\n",
+               round(q$R2,2), " (", q$Pr..F., ")", 
+               sep="")
+#Plot Figure 
+
+q0.plot <- ggplot(q, aes(area = R2, label=Level))+
+  geom_treemap(fill=brewer.pal(4, "Blues")[1:4], color=1, alpha=.8)+
+  geom_treemap_text(colour = "black", place = "centre", grow = FALSE, size=10)+
+  ggtitle("12S Apportioned Variance")+
+  theme(plot.background = element_blank())+
+  theme(plot.title = element_text(hjust = 0.5))
+
+q0.plot
+ggsave("12S_m1.png")
+```
+
+```{r}
+#Model 2 tree map
+m2 <- adonis(vegan_12S~sampledf$dissolved_oxygen+sampledf$nitrate+sampledf$chlorophyll+sampledf$Temp_9_m+sampledf$primary_productivity+sampledf$calcite+sampledf$light)$aov.tab
+q<-as.data.frame(m2)
+row.names(q)<-c("Dissolved oxygen","nitrate","chlorophyll-a","temperature", "Primary Productivity", "calcite", "light", "Residuals", "Total") # must match names correctly
+q<-data.frame(row.names(q), q)
+names(q)[1]<-"Level"
+q<-q[-which(row.names(q)=="Total"),]
+q$Level<-paste(q$Level, "\n",
+               round(q$R2,2), " (", q$Pr..F., ")", 
+               sep="")
+#Plot Figure 
+qplot <- ggplot(q, aes(area = R2, label=Level))+
+  geom_treemap(fill=brewer.pal(8, "Blues")[1:8], color=1, alpha=.8)+
+  geom_treemap_text(colour = "black", place = "centre", grow = FALSE, size=13)+
+  ggtitle("12S Apportioned Variance")+
+  theme(plot.background = element_blank())+
+  theme(plot.title = element_text(hjust = 0.5))
+qplot
+ggsave("12S_m2.png")
+```
+
+```{r}
+#Final model tree map
+m3 <- adonis(vegan_12S~sampledf$Region+sampledf$chlorophyll+sampledf$Region*sampledf$chlorophyll)$aov.tab
+q<-as.data.frame(m3)
+row.names(q)<-c("Region","chlorophyll-a","chlorophyll-a by region", "Residuals", "Total") # must match names correctly
+q<-data.frame(row.names(q), q)
+names(q)[1]<-"Level"
+q<-q[-which(row.names(q)=="Total"),]
+q$Level<-paste(q$Level, "\n",
+               round(q$R2,2), " (", q$Pr..F., ")", 
+               sep="")
+#Plot Figure 
+qplot <- ggplot(q, aes(area = R2, label=Level))+
+  geom_treemap(fill=brewer.pal(4, "Blues")[1:4], color=1, alpha=.8)+
+  geom_treemap_text(colour = "black", place = "centre", grow = FALSE, size=10)+
+  ggtitle("12S Apportioned Variance")+
+  theme(plot.background = element_blank())+
+  theme(plot.title = element_text(hjust = 0.5))
+ggsave("12S_m3.png")
+```
+
+#COI PERMANOVA
+```{r}
+#Model 1 PERMANOVA
+broom::tidy(adonis(vegan_coi~sampledf2$Depth_Class+sampledf2$Region+sampledf2$Depth_Class*sampledf2$Region, permutations=10000)$aov.tab) #depth not sig, region sig, interaction not sig
+
+#pairwise PERMANOVA by depth
+pairwise_adonis(vegan_coi,sampledf2$Depth_Class,sim_method="bray",p_adjust_m="fdr") #not sig
+
+#pairwise PERMANOVA by region
+pairwise_adonis(vegan_coi,sampledf2$Region,sim_method="bray",p_adjust_m="fdr") 
+
+#Model 2 PERMANOVA
+broom::tidy(adonis(vegan_coi~sampledf2$dissolved_oxygen+sampledf2$nitrate+sampledf2$chlorophyll+sampledf2$Temp_9_m+sampledf2$light+sampledf2$primary_productivity+sampledf2$calcite)$aov.tab)
+
+#Final model PERMANOVA
+broom::tidy(adonis(vegan_coi~sampledf2$Region+sampledf2$dissolved_oxygen+sampledf2$chlorophyll+sampledf2$Region*sampledf2$chlorophyll+sampledf2$Region*sampledf2$dissolved_oxygen)$aov.tab)
+
+#Homogeneity of dispersions test
+broom::tidy(TukeyHSD(betadisper(d_COI,getElement(sampledf2,"Region"))))
+```
+##tree map
+```{r}
+#Model 1 tree map
+m1 <- adonis(vegan_coi~sampledf2$Depth_Class+sampledf2$Region+sampledf2$Depth_Class*sampledf2$Region)$aov.tab#depth around 0.1, region 0.003, interaction not sig
+q<-as.data.frame(m1)
+row.names(q)<-c("Depth","Region","Sample","Residuals","Total") # must match names correctly
+q<-data.frame(row.names(q), q)
+names(q)[1]<-"Level"
+q<-q[-which(row.names(q)=="Total"),]
+q$Level<-paste(q$Level, "\n",
+               round(q$R2,2), " (", q$Pr..F., ")", 
+               sep="")
+
+qplot <- ggplot(q, aes(area = R2, label=Level))+
+  geom_treemap(fill=brewer.pal(4, "Blues")[1:4], color=1, alpha=.8)+
+  geom_treemap_text(colour = "black", place = "centre", grow = FALSE, size=10)+
+  ggtitle("COI Apportioned Variance")+
+  theme(plot.background = element_blank())+
+  theme(plot.title = element_text(hjust = 0.5))
+qplot
+ggsave("coi_m1.png")
+```
+```{r}
+#Model 2 tree map
+m2 <- adonis(vegan_coi~sampledf2$dissolved_oxygen+sampledf2$nitrate+sampledf2$chlorophyll+sampledf2$Temp_9_m+sampledf2$primary_productivity+sampledf2$calcite+sampledf2$light)$aov.tab
+broom::tidy(m2)
+q<-as.data.frame(m2)
+row.names(q)<-c("Dissolved oxygen","nitrate","chlorophyll-a","temperature", "Primary Productivity", "calcite", "light", "Residuals", "Total") # must match names correctly
+q<-data.frame(row.names(q), q)
+names(q)[1]<-"Level"
+q<-q[-which(row.names(q)=="Total"),]
+q$Level<-paste(q$Level, "\n",
+               round(q$R2,2), " (", q$Pr..F., ")", 
+               sep="")
+#Plot Figure 
+qplot <- ggplot(q, aes(area = R2, label=Level))+
+  geom_treemap(fill=brewer.pal(8, "Blues")[1:8], color=1, alpha=.8)+
+  geom_treemap_text(colour = "black", place = "centre", grow = FALSE, size=7)+
+  ggtitle("CO1 Apportioned Variance")+
+  theme(plot.background = element_blank())+
+  theme(plot.title = element_text(hjust = 0.5))
+qplot
+ggsave("coi_m2.png")
+```
+```{R}
+#Final model tree map
+m3 <- adonis(vegan_coi~sampledf2$Region+sampledf2$chlorophyll+sampledf2$dissolved_oxygen+sampledf2$Region*sampledf2$chlorophyll+sampledf2$Region*sampledf2$dissolved_oxygen)$aov.tab
+broom::tidy(m3)
+q<-as.data.frame(m3)
+row.names(q)<-c("Region","chlorophyll-a", "dissolved oxygen", "chlorophyll-a by region", "dissolved oxygen by region", "Residuals", "Total") # must match names correctly
+q<-data.frame(row.names(q), q)
+names(q)[1]<-"Level"
+q<-q[-which(row.names(q)=="Total"),]
+q$Level<-paste(q$Level, "\n",
+               round(q$R2,2), " (", q$Pr..F., ")", 
+               sep="")
+#Plot Figure 
+ggplot(q, aes(area = R2, label=Level))+
+  geom_treemap(fill=brewer.pal(6, "Blues")[1:6], color=1, alpha=.8)+
+  geom_treemap_text(colour = "black", place = "centre", grow = FALSE, size=10)+
+  ggtitle("COI Apportioned Variance")+
+  theme(plot.background = element_blank())+
+  theme(plot.title = element_text(hjust = 0.5))
+ggsave("coi_m3.png")
+```
+#CCA
+```{r}
+#The full CCA visualization was buggy and didn't let the names of the taxa show, only the ESV IDs, but we cross referenced with the taxonomy table
+```
+##12S Region
+```{r}
+cap_ord <- ordinate(
+  physeq = physeq_obj, 
+  method = "CAP",
+  distance = d_12S,
+  formula = ~Region)
+#Results of model
+anova(cap_ord)
+```
+
+```{r}
+# CAP plot of 12S predictor taxa
+sample_data(physeq_obj)$Region = factor(sample_data(physeq_obj)$Region, levels = c("Catalina","Malibu","Palos_Verdes"))
+get_variable(physeq_obj,"Region")
+cap_plot <- plot_ordination(
+  physeq = physeq_obj, 
+  ordination = cap_ord, 
+  color = "Region", 
+  axes = c(1,2) #what this mean
+) + 
+  aes(shape = Region) + 
+  geom_point(aes(colour = Region), size = 4) + 
+  geom_point(colour = "grey90", size = 1.5)
+cap_plot
+```
+
+```{r}
+# Now add the environmental variables as arrows
+arrowmat <- vegan::scores(cap_ord, display = "bp")
+# Add labels, make a data.frame #WHAT
+arrowdf <- data.frame(labels = rownames(arrowmat), arrowmat)
+# Define the arrow aesthetic mapping
+arrow_map <- aes(xend = CAP1, 
+                 yend = CAP2, 
+                 x = 0, 
+                 y = 0, 
+                 shape = NULL, 
+                 color = NULL, 
+                 label = labels)
+
+label_map <- aes(x = 0.92 * CAP1, 
+                 y = 1.3 * CAP2, 
+                 shape = NULL, 
+                 color = NULL, 
+                 label = labels)
+
+arrowhead = arrow(length = unit(0.02, "npc"))
+#Hulls for each polygon
+
+test <- vegan::scores(cap_ord, display = "sites")
+data.scores_1 <- as.data.frame(scores(test))  
+
+#Using the scores function from vegan to extract the site scores and 
+# convert to a data.frame
+data.scores_1$sites <- sampledf$Region
+# create a column of site names, from the rownames of data.scores
+
+#Add location data 
+grp <- sampledf$Region
+data.scores_1$grp <- grp  #  add the grp variable created earlier
+```
+
+```{r}
+##### Calculate Shape Around Points
+grp.pv <- data.scores_1[data.scores_1$sites == "Palos_Verdes", ][chull(data.scores_1[data.scores_1$sites == "Palos_Verdes", c("CAP1", "CAP2")]),] #it's only extracting the first three sites
+grp.malibu <- data.scores_1[data.scores_1$grp == "Malibu", ][chull(data.scores_1[data.scores_1$grp == "Malibu", c("CAP1", "CAP2")]), ] #it's only extracting the first three sites
+grp.catalina <- data.scores_1[data.scores_1$grp == "Catalina", ][chull(data.scores_1[data.scores_1$grp == "Catalina", c("CAP1", "CAP2")]), ] #it's only extracting the first three sites
+hull.data <- rbind(grp.pv,grp.malibu,grp.catalina)
+colnames(hull.data)[3] <- c("Region")
+```
+
+```{r}
+
+
+# Make a new graphic for the constrained ordination
+
+cap_1 <- cap_plot +  
+  theme_bw(base_size = 18)+
+geom_segment(
+    mapping = arrow_map, 
+    size = .5, 
+    data = arrowdf, 
+    color = "grey", 
+    arrow = arrowhead) +
+  geom_text(
+    mapping = label_map, 
+    size = 6,  
+    data = arrowdf, 
+    show.legend = FALSE
+  ) + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(),  panel.border = element_rect(colour = "black", fill=NA, size=2))+
+  geom_polygon(data=hull.data,aes(x=CAP1,y=CAP2,fill=grp, group=grp),alpha=0.30) +
+    ggtitle("Constrained Analysis of Principle Components")
+
+cap_1
+
+```
+###predictor species
+
+```{r}
+#Retain species scores
+cap_12S <- capscale(vegan_12S ~ Region, data=sampledf, dist="bray") 
+sppscores(cap_12S) <- vegan_12S #adding species scores from vegan_12S to cap_12S
+```
+
+```{r}
+as.data.frame(vegan::scores(cap_12S, display="species")) %>%
+  rownames_to_column(var = "sample") %>% 
+  as_tibble %>%
+ mutate(dist = sqrt((CAP1 - 0)^2 + (CAP2 - 0)^2)) -> cap_12S_species_distances 
+
+cap_12S_species_distances %>% arrange(dist) %>% ggplot(., aes(y=dist, x=reorder(sample,-dist)))+geom_bar(stat="identity") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+ggplot(data=cap_12S_species_distances, aes(cap_12S_species_distances$dist)) + geom_histogram()
+```
+
+```{r}
+cap_12S_species_distances %>% 
+  top_n(7, dist) -> top_species
+top_species <- as.data.frame(top_species)
+rownames(top_species) <- top_species$sample
+
+# Now add the environmental variables as arrows
+arrowmat <- top_species #up to CAP2
+
+#Rename row names to clean up plot
+#it's not calling the names!!! ahhhh
+view(arrowmat)
+rownames(top_species) %>% as.data.frame() -> namers
+colnames(namers) <- c("path")
+namers %>% separate(path, c("Domain","Phylum","Class","Order","Family","Genus","Species"), sep=";") %>% #
+  mutate(., name = ifelse(Species == "", Genus, Species)) %>% 
+  mutate(., name = ifelse(name == "", Family, name)) %>% 
+  mutate(., name = ifelse(name == "", Order, name)) %>% 
+  mutate(., name = ifelse(name == "", Class, name)) %>% 
+  mutate(., name = ifelse(name == "", Phylum, name))->namers
+```
+##don't run until you figure out why it's not assigning names
+```{R}
+rownames(arrowmat) <- NULL
+rownames(arrowmat) <- namers$name #still up to CAP2
+```
+
+```{r}
+
+# Add labels, make a data.frame
+arrowdf <- data.frame(labels = rownames(arrowmat), arrowmat) #up to CAP2
+
+# Define the arrow aesthetic mapping
+arrow_map <- aes(xend = CAP1, 
+                 yend = CAP2, 
+                 x = 0, 
+                 y = 0, 
+                 shape = NULL, 
+                 color = NULL, 
+                 label = labels)
+
+label_map <- aes(x = 0.75 * CAP1, 
+                 y = 0.75 * CAP2, 
+                 shape = NULL, 
+                 color = NULL, 
+                 label = labels)
+
+arrowhead = arrow(length = unit(0.02, "npc"))
+
+#Hulls for each polygon
+
+
+test.2 <- as.data.frame(cap_12S$CCA$wa) 
+
+data.scores_1 <- as.data.frame(scores(test.2)) 
+
+data.scores_1$Region <- sampledf$Region
+# create a column of region names, from the rownames of data.scores
+head(data.scores_1) 
+
+
+grp <- sampledf$Region
+data.scores_1$grp <-grp  #  add the grp variable created earlier
+  
+#### Calculate Convex Hull Shape Around Points 
+
+
+grp.pv <- data.scores_1[data.scores_1$sites == "Palos_Verdes", ][chull(data.scores_1[data.scores_1$sites == "Palos_Verdes", c("CAP1", "CAP2")]),] #it's only extracting the first three sites
+grp.malibu <- data.scores_1[data.scores_1$grp == "Malibu", ][chull(data.scores_1[data.scores_1$grp == "Malibu", c("CAP1", "CAP2")]), ] #it's only extracting the first three sites
+grp.catalina <- data.scores_1[data.scores_1$grp == "Catalina", ][chull(data.scores_1[data.scores_1$grp == "Catalina", c("CAP1", "CAP2")]), ] #it's only extracting the first three sites
+hull.data <- rbind(grp.pv,grp.malibu,grp.catalina)
+ 
+# Plot CAP 
+data_cap <- as.data.frame(cap_12S$CCA$wa)%>% #forcing this into a dataframe?
+  rownames_to_column(var = "sample") %>% 
+  as_tibble() %>% 
+  separate(sample, into = c("Region")) 
+#had to add data to figure it out
+
+ggplot(data=data_cap,aes(x=CAP1, y=CAP2)) + geom_point() + 
+  geom_segment(mapping = arrow_map, size = .5, data = arrowdf,color = "grey",arrow = arrowhead)+
+  geom_text(mapping = label_map, size = 5, data = arrowdf, show.legend = FALSE, position=position_jitter(width=0.05,height=0.08))+ 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(),  panel.border = element_rect(colour = "black", fill=NA, size=2))+
+  geom_polygon(data=hull.data,aes(x=CAP1,y=CAP2,fill=grp, group=grp),alpha=0.30) + 
+   ggtitle("Predictor 12S taxa driving regional variation",)+
+  theme(plot.title = element_text(hjust = 0.5,size = 20, face = "bold"),
+        axis.text=element_text(size=20),
+        axis.title=element_text(size=24,face="bold"),
+        legend.title=element_text(size=20),
+        legend.text=element_text(size=18),
+        plot.subtitle = element_text(size=20),
+        legend.spacing.y = unit(0.5, 'cm'), 
+        legend.key = element_rect(size = 10),
+        legend.key.size = unit(2, 'lines'))
+ 
+```
+##COI Region
+```{r}
+cap_ord <- ordinate(
+  physeq = coi_physeq_obj, 
+  method = "CAP",
+  distance = d_COI,
+  formula = ~Region)
+#Results of model
+anova(cap_ord)
+```
+
+```{r}
+# CAP plot of environmental predictor variables
+sample_data(coi_physeq_obj)$Region = factor(sample_data(coi_physeq_obj)$Region, levels = c("Catalina","Malibu","Palos_Verdes"))
+get_variable(physeq_obj,"Region")
+cap_plot <- plot_ordination(
+  physeq = coi_physeq_obj, 
+  ordination = cap_ord, 
+  color = "Region", 
+  axes = c(1,2) #what this mean
+) + 
+  aes(shape = Region) + 
+  geom_point(aes(colour = Region), size = 4) + 
+  geom_point(colour = "grey90", size = 1.5)
+cap_plot
+```
+
+```{r}
+# Now add the environmental variables as arrows
+arrowmat <- vegan::scores(cap_ord, display = "bp")
+# Add labels, make a data.frame #WHAT
+arrowdf <- data.frame(labels = rownames(arrowmat), arrowmat)
+# Define the arrow aesthetic mapping
+arrow_map <- aes(xend = CAP1, 
+                 yend = CAP2, 
+                 x = 0, 
+                 y = 0, 
+                 shape = NULL, 
+                 color = NULL, 
+                 label = labels)
+
+label_map <- aes(x = 0.92 * CAP1, 
+                 y = 1.3 * CAP2, 
+                 shape = NULL, 
+                 color = NULL, 
+                 label = labels)
+
+arrowhead = arrow(length = unit(0.02, "npc"))
+#Hulls for each polygon
+
+test <- vegan::scores(cap_ord, display = "sites")
+data.scores_1 <- as.data.frame(scores(test))  
+
+#Using the scores function from vegan to extract the site scores and 
+# convert to a data.frame
+data.scores_1$sites <- sampledf2$Region
+# create a column of site names, from the rownames of data.scores
+
+#Add location data 
+grp <- sampledf2$Region
+data.scores_1$grp <- grp  #  add the grp variable created earlier
+```
+
+```{r}
+##### Calculate Shape Around Points
+grp.pv <- data.scores_1[data.scores_1$sites == "Palos_Verdes", ][chull(data.scores_1[data.scores_1$sites == "Palos_Verdes", c("CAP1", "CAP2")]),] #it's only extracting the first three sites
+grp.malibu <- data.scores_1[data.scores_1$grp == "Malibu", ][chull(data.scores_1[data.scores_1$grp == "Malibu", c("CAP1", "CAP2")]), ] #it's only extracting the first three sites
+grp.catalina <- data.scores_1[data.scores_1$grp == "Catalina", ][chull(data.scores_1[data.scores_1$grp == "Catalina", c("CAP1", "CAP2")]), ] #it's only extracting the first three sites
+hull.data <- rbind(grp.pv,grp.malibu,grp.catalina)
+colnames(hull.data)[3] <- c("Region")
+```
+
+```{r}
+
+
+# Make a new graphic for the constrained ordination
+
+cap_1 <- cap_plot +  
+  theme_bw(base_size = 18)+
+geom_segment(
+    mapping = arrow_map, 
+    size = .5, 
+    data = arrowdf, 
+    color = "grey", 
+    arrow = arrowhead) +
+  geom_text(
+    mapping = label_map, 
+    size = 6,  
+    data = arrowdf, 
+    show.legend = FALSE
+  ) + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(),  panel.border = element_rect(colour = "black", fill=NA, size=2))+
+  geom_polygon(data=hull.data,aes(x=CAP1,y=CAP2,fill=grp, group=grp),alpha=0.30) +
+    ggtitle("Constrained Analysis of Principle Components")
+
+cap_1
+
+```
+###predictor species
+
+```{r}
+#Retain species scores
+cap_COI <- capscale(vegan_coi ~ Region, data=sampledf2, dist="bray") 
+sppscores(cap_COI) <- vegan_coi #adding species scores from vegan_12S to cap_12S
+```
+
+```{r}
+as.data.frame(vegan::scores(cap_COI, display="species")) %>%
+  rownames_to_column(var = "sample") %>% 
+  as_tibble %>%
+ mutate(dist = sqrt((CAP1 - 0)^2 + (CAP2 - 0)^2)) -> cap_COI_species_distances 
+
+cap_COI_species_distances %>% arrange(dist) %>% ggplot(., aes(y=dist, x=reorder(sample,-dist)))+geom_bar(stat="identity") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+ggplot(data=cap_COI_species_distances, aes(cap_COI_species_distances$dist)) + geom_histogram()
+```
+
+```{r}
+cap_COI_species_distances %>% 
+  top_n(7, dist) -> top_species
+top_species <- as.data.frame(top_species)
+rownames(top_species) <- top_species$sample
+
+# Now add the environmental variables as arrows
+arrowmat <- top_species #up to CAP2
+
+#Rename row names to clean up plot
+#it's not calling the names!!! ahhhh
+view(arrowmat)
+rownames(top_species) %>% as.data.frame() -> namers
+colnames(namers) <- c("path")
+namers %>% separate(path, c("Domain","Phylum","Class","Order","Family","Genus","Species"), sep=";") %>% #
+  mutate(., name = ifelse(Species == "", Genus, Species)) %>% 
+  mutate(., name = ifelse(name == "", Family, name)) %>% 
+  mutate(., name = ifelse(name == "", Order, name)) %>% 
+  mutate(., name = ifelse(name == "", Class, name)) %>% 
+  mutate(., name = ifelse(name == "", Phylum, name))->namers
+```
+###don't run until you figure out why it's not assigning names
+```{R}
+rownames(arrowmat) <- NULL
+rownames(arrowmat) <- namers$name #still up to CAP2
+```
+
+```{r}
+
+# Add labels, make a data.frame
+arrowdf <- data.frame(labels = rownames(arrowmat), arrowmat) #up to CAP2
+
+# Define the arrow aesthetic mapping
+arrow_map <- aes(xend = CAP1, 
+                 yend = CAP2, 
+                 x = 0, 
+                 y = 0, 
+                 shape = NULL, 
+                 color = NULL, 
+                 label = labels)
+
+label_map <- aes(x = 0.75 * CAP1, 
+                 y = 0.75 * CAP2, 
+                 shape = NULL, 
+                 color = NULL, 
+                 label = labels)
+
+arrowhead = arrow(length = unit(0.02, "npc"))
+
+#Hulls for each polygon
+
+
+test.2 <- as.data.frame(cap_COI$CCA$wa) 
+
+data.scores_1 <- as.data.frame(scores(test.2)) 
+
+data.scores_1$Region <- sampledf2$Region
+# create a column of region names, from the rownames of data.scores
+head(data.scores_1) 
+
+
+grp <- sampledf2$Region
+data.scores_1$grp <-grp  #  add the grp variable created earlier
+  
+#### Calculate Convex Hull Shape Around Points 
+
+
+grp.pv <- data.scores_1[data.scores_1$sites == "Palos_Verdes", ][chull(data.scores_1[data.scores_1$sites == "Palos_Verdes", c("CAP1", "CAP2")]),] #it's only extracting the first three sites
+grp.malibu <- data.scores_1[data.scores_1$grp == "Malibu", ][chull(data.scores_1[data.scores_1$grp == "Malibu", c("CAP1", "CAP2")]), ] #it's only extracting the first three sites
+grp.catalina <- data.scores_1[data.scores_1$grp == "Catalina", ][chull(data.scores_1[data.scores_1$grp == "Catalina", c("CAP1", "CAP2")]), ] #it's only extracting the first three sites
+hull.data <- rbind(grp.pv,grp.malibu,grp.catalina)
+ 
+# Plot CAP 
+data_cap <- as.data.frame(cap_COI$CCA$wa)%>% #forcing this into a dataframe?
+  rownames_to_column(var = "sample") %>% 
+  as_tibble() %>% 
+  separate(sample, into = c("Region")) 
+#had to add data to figure it out
+
+ggplot(data=data_cap,aes(x=CAP1, y=CAP2)) + geom_point() + 
+  geom_segment(mapping = arrow_map, size = .5, data = arrowdf,color = "grey",arrow = arrowhead)+
+  geom_text(mapping = label_map, size = 5, data = arrowdf, show.legend = FALSE, position=position_jitter(width=0.05,height=0.08))+ 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(),  panel.border = element_rect(colour = "black", fill=NA, size=2))+
+  geom_polygon(data=hull.data,aes(x=CAP1,y=CAP2,fill=grp, group=grp),alpha=0.30) + 
+   ggtitle("Predictor COI taxa driving regional variation",)+
+  theme(plot.title = element_text(hjust = 0.5,size = 20, face = "bold"),
+        axis.text=element_text(size=20),
+        axis.title=element_text(size=24,face="bold"),
+        legend.title=element_text(size=20),
+        legend.text=element_text(size=18),
+        plot.subtitle = element_text(size=20),
+        legend.spacing.y = unit(0.5, 'cm'), 
+        legend.key = element_rect(size = 10),
+        legend.key.size = unit(2, 'lines'))
+ 
+```
+#bar plots for visualization
+##COI CCA taxa
+```{r}
+Micromonas_pusilla <- subset_taxa(coi_physeq_obj,Species=="Micromonas pusilla")
+title="Distribution of Micromonas pusilla among samples"
+p <- plot_bar(Micromonas_pusilla,"Sample","Abundance","Species",title=title)
+p+geom_bar(aes(fill=Region),stat="identity",position="stack")
+
+```
+```{r}
+Bathycoccus_prasinos <- subset_taxa(coi_physeq_obj,Species=="Bathycoccus prasinos")
+title="Distribution of Bathycoccus prasinos among samples"
+p <- plot_bar(Bathycoccus_prasinos,"Sample","Abundance","Species",title=title)
+p+geom_bar(aes(fill=Region),stat="identity",position="stack")
+```
+```{r}
+Sarsamphiascus_kawamurai  <- subset_taxa(coi_physeq_obj,Species=="Sarsamphiascus kawamurai")
+title="Distribution of Sarsamphiascus kawamurai among samples"
+p <- plot_bar(Sarsamphiascus_kawamurai ,"Sample","Abundance","Species",title=title)
+p+geom_bar(aes(fill=Region),stat="identity",position="stack")
+```
+```{r}
+haptoglossa  <- subset_taxa(coi_physeq_obj,Species=="Haptoglossa sp. DM2 4/12")
+title="Distribution of Haptoglossa sp. DM2 4/12 among samples"
+p <- plot_bar(haptoglossa ,"Sample","Abundance","Species",title=title)
+p+geom_bar(aes(fill=Region),stat="identity",position="stack")
+```
+```{r}
+Podocorynoides_minima   <- subset_taxa(coi_physeq_obj,Species=="Podocorynoides minima")
+title="Distribution of Podocorynoides minima among samples"
+p <- plot_bar(Podocorynoides_minima  ,"Sample","Abundance","Species",title=title)
+p+geom_bar(aes(fill=Region),stat="identity",position="stack")
+```
+```{r}
+Pseudevadne_tergestina <- subset_taxa(coi_physeq_obj,Species=="Pseudevadne tergestina")
+title="Distribution of Pseudevadne tergestina among samples"
+p <- plot_bar(Pseudevadne_tergestina  ,"Sample","Abundance","Species",title=title)
+p+geom_bar(aes(fill=Region),stat="identity",position="stack")
+```
+```{r}
+Evadne_nordmanni <- subset_taxa(coi_physeq_obj,Species=="Evadne nordmanni")
+title="Distribution of Evadne nordmanni among samples"
+p <- plot_bar(Evadne_nordmanni  ,"Sample","Abundance","Species",title=title)
+p+geom_bar(aes(fill=Region),stat="identity",position="stack")
+```
+##12S CCA taxa
+```{r}
+senorita <- subset_taxa(physeq_obj,Species=="Oxyjulis californica")
+title="Distribution of senorita among sites"
+p <- plot_bar(senorita,"Sample","Abundance","Species",title=title)
+p+geom_bar(aes(fill=Region),stat="identity",position="stack")
+
+```
+
+```{r}
+kelp_bass <- subset_taxa(physeq_obj,Species=="Paralabrax clathratus")
+title="Distribution of kelp bass among sites"
+p <- plot_bar(kelp_bass,"Sample","Abundance","Species",title=title)
+p+geom_bar(aes(fill=Region),stat="identity",position="stack")
+```
+```{r}
+northern_anchovy <- subset_taxa(physeq_obj,Species=="Engraulis mordax")
+title="Distribution of northern anchovy among sites"
+p <- plot_bar(northern_anchovy,"Region","Abundance","Species",title=title)
+p+geom_bar(aes(fill=Region),stat="identity",position="stack")
+```
+
+```{r}
+california_grunion <- subset_taxa(physeq_obj,Species=="Leuresthes tenuis")
+title="Distribution of california grunion among sites"
+p <- plot_bar(california_grunion,"Region","Abundance","Species",title=title)
+p+geom_bar(aes(fill=Region),stat="identity",position="stack")
+```
+```{r}
+california_tonguefish <- subset_taxa(physeq_obj,Species=="Symphurus atricaudus")
+title="Distribution of California tonguefish among sites"
+p <- plot_bar(california_tonguefish,"Sample","Abundance","Species",title=title)
+p+geom_bar(aes(fill=Region),stat="identity",position="stack")
+```
+```{r}
+kelp_perch <- subset_taxa(physeq_obj,Species=="Brachyistius frenatus")
+title="Distribution of kelp perch among samples"
+p <- plot_bar(kelp_perch,"Sample","Abundance","Species",title=title)
+p+geom_bar(aes(fill=Region),stat="identity",position="stack")
+```
+```{r}
+california_sheephead <- subset_taxa(physeq_obj,Species=="Semicossyphus pulcher")
+title="Distribution of California Sheephead among samples"
+p <- plot_bar(california_sheephead,"Sample","Abundance","Species",title=title)
+p+geom_bar(aes(fill=Region),stat="identity",position="stack")
+```
+#linear model (chlorophll ~ region)
+```{r}
+m1 <- lm(chlorophyll~Region,data=sampledf)
+summary(m1)
+anova(m1)#sig with temp average and temp no m
+#maybe there is a temperature gradient, but just across all sites throughout the southern california bight, but not in between depths. 
+```
