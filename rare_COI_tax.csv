@@ -1,0 +1,46 @@
+ESVId,Phylum,Class,Order,Family,Genus,Species
+ESV_007909,Arthropoda,Hexanauplia,Calanoida,Clausocalanidae,Clausocalanus,Clausocalanus furcatus
+ESV_021116,unk_phylum,Pelagophyceae,Pelagomonadales,unk_family,Pelagomonas,Pelagomonas calceolata
+ESV_021524,Chlorophyta,Mamiellophyceae,Mamiellales,Bathycoccaceae,Bathycoccus,Bathycoccus prasinos
+ESV_021538,unk_phylum,Dictyochophyceae,Florenciellales,unk_family,Pseudochattonella,Pseudochattonella verruculosa
+ESV_021609,Chlorophyta,Mamiellophyceae,Mamiellales,Mamiellaceae,Micromonas,Micromonas pusilla
+ESV_021966,Haptista,Haptophyta,Isochrysidales,Noelaerhabdaceae,Emiliania,Emiliania huxleyi
+ESV_022910,Chordata,Ascidiacea,Phlebobranchia,Ascidiidae,Ascidia,Ascidia ahodori
+ESV_043672,Oomycota,unk_class,unk_order,unk_family,Haptoglossa,Haptoglossa sp. DM2 4/12
+ESV_043682,Mollusca,Gastropoda,Littorinimorpha,Vermetidae,Thylacodes,Thylacodes squamigerus
+ESV_043691,Arthropoda,Hexanauplia,Calanoida,Calocalanidae,Calocalanus,Calocalanus tenuis
+ESV_043695,Bryozoa,Gymnolaemata,Cheilostomatida,Membraniporidae,Membranipora,Membranipora membranacea
+ESV_043701,Mollusca,Gastropoda,Trochida,Tegulidae,Norrisia,Norrisia norrisii
+ESV_043705,Arthropoda,Hexanauplia,Harpacticoida,Tisbidae,Tisbe,Tisbe sp. FHL 3
+ESV_043711,Bacillariophyta,Bacillariophyceae,Bacillariales,Bacillariaceae,Pseudo-nitzschia,Pseudo-nitzschia sabit
+ESV_043732,Chlorophyta,Chloropicophyceae,Chloropicales,Chloropicaceae,Chloroparvula,Chloroparvula pacifica
+ESV_043748,Arthropoda,Hexanauplia,Harpacticoida,Miraciidae,Sarsamphiascus,Sarsamphiascus kawamurai
+ESV_043749,Annelida,Polychaeta,Phyllodocida,Syllidae,Pionosyllis,Pionosyllis sp. CMC01
+ESV_043762,Annelida,Polychaeta,Phyllodocida,Syllidae,Syllis,Syllis alternata CMC04
+ESV_043771,Arthropoda,Hexanauplia,Calanoida,Calanidae,Ctenocalanus,Ctenocalanus vanus
+ESV_043772,Annelida,Polychaeta,Sabellida,Sabellidae,Chone,Chone magna CMC01
+ESV_043776,Bacillariophyta,Mediophyceae,Lithodesmiales,Lithodesmiaceae,Lithodesmium,Lithodesmium intricatum
+ESV_043781,Bacillariophyta,Mediophyceae,Cymatosirales,Cymatosiraceae,Minutocellus,Minutocellus polymorphus
+ESV_043783,Cnidaria,Hydrozoa,Anthoathecata,Pandeidae,Leuckartiara,Leuckartiara octona
+ESV_043787,Haptista,Haptophyta,Prymnesiales,Chrysochromulinaceae,Chrysochromulina,Chrysochromulina sp. NIES-1333
+ESV_043791,Cnidaria,Hydrozoa,Anthoathecata,Rathkeidae,Podocorynoides,Podocorynoides minima
+ESV_043794,Arthropoda,Hexanauplia,Calanoida,Calanidae,Calanus,Calanus pacificus
+ESV_043803,Bacillariophyta,Bacillariophyceae,Bacillariales,Bacillariaceae,Cylindrotheca,Cylindrotheca closterium
+ESV_043824,Annelida,Polychaeta,Phyllodocida,Nereididae,Platynereis,Platynereis sp. CMC01
+ESV_043873,Chordata,Actinopteri,Pleuronectiformes,Cynoglossidae,Symphurus,Symphurus atricaudus
+ESV_043874,Mollusca,Gastropoda,Neogastropoda,Conidae,Californiconus,Californiconus californicus
+ESV_043875,Arthropoda,Branchiopoda,Diplostraca,Podonidae,Evadne,Evadne nordmanni
+ESV_043878,Cnidaria,Hydrozoa,Leptothecata,Obeliidae,Obelia,Obelia dichotoma
+ESV_043879,Mollusca,Gastropoda,Pteropoda,Cymbuliidae,Corolla,Corolla spectabilis
+ESV_043881,Porifera,Demospongiae,Suberitida,Suberitidae,Protosuberites,Protosuberites denhartogi
+ESV_043893,Arthropoda,Branchiopoda,Diplostraca,Podonidae,Pseudevadne,Pseudevadne tergestina
+ESV_043894,Cnidaria,Hydrozoa,Siphonophorae,Diphyidae,Lensia,Lensia campanella
+ESV_043898,Arthropoda,Hexanauplia,Sessilia,Balanidae,Balanus,Balanus trigonus
+ESV_043903,unk_phylum,Phaeophyceae,Fucales,Sargassaceae,Stephanocystis,Stephanocystis osmundacea
+ESV_043912,Porifera,Demospongiae,Clionaida,Clionaidae,Cliona,Cliona celata
+ESV_043918,Annelida,Polychaeta,Phyllodocida,Polynoidae,Lepidonotus,Lepidonotus havaicus
+ESV_043919,Annelida,Polychaeta,Spionida,Spionidae,Boccardia,Boccardia proboscidea
+ESV_043924,Annelida,Polychaeta,Spionida,Spionidae,Prionospio,Prionospio steenstrupi
+ESV_043944,Chordata,Actinopteri,Labriformes,Labridae,Halichoeres,Halichoeres semicinctus
+ESV_043945,Cnidaria,Hydrozoa,Siphonophorae,Diphyidae,Muggiaea,Muggiaea atlantica
+ESV_043947,Chaetognatha,Sagittoidea,Aphragmophora,Sagittidae,Sagitta,Sagitta setosa
